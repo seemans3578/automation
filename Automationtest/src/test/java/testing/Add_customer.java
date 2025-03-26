@@ -8,60 +8,121 @@ import org.openqa.selenium.chrome.ChromeDriver;
 public class Add_customer {
 
     public static void main(String[] args) throws InterruptedException {
-        // Set up ChromeDriver
         WebDriver driver = new ChromeDriver();
+        driver.get("https://testffc.nimapinfotech.com/");
         driver.manage().window().maximize();
+        Thread.sleep(2000);
 
-        // Array of data sets for registration and reset
-        String[][] data = {
-                {"Seemans Tiwari", "9004381990", "seemanstiwari.model@gmail.com", "4884", "NewPassword123"},
-                {"Manasi", "9988776655", "manasi@gmail.com", "1234", "SecurePass456"}
-        };
+        // Valid login credentials
+        String username = "seemanstiwari@gmail.com";
+        String password = "12345678";
+        String expectedMessage = "Dashboard";
 
-        // Loop through both data sets
-        for (int i = 0; i < data.length; i++) {
-            // Open Registration Page
-            driver.get("https://testffc.nimapinfotech.com/auth/register");
-            Thread.sleep(2000);
+        // Perform login
+        performLogin(driver, username, password);
 
-            // Fill Registration Details with Parametrized Data
-            driver.findElement(By.xpath("//input[@placeholder='Name']")).sendKeys(data[i][0]);
-            Thread.sleep(2000);
-            driver.findElement(By.xpath("//input[@placeholder='Mobile No']")).sendKeys(data[i][1]);
-            Thread.sleep(2000);
-            driver.findElement(By.xpath("//input[@placeholder='Email Id']")).sendKeys(data[i][2]);
-            Thread.sleep(2000);
+        // Validate response message
+        String actualMessage = getResponseMessage(driver);
 
-            // Click on Submit
-            driver.findElement(By.xpath("//button[text()='Submit']")).click();
-            Thread.sleep(3000);
+        // Check if actual message contains the expected text
+        if (actualMessage.contains(expectedMessage)) {
+            System.out.println("Login successful!");
 
-            // Fill OTP and Reset Password Details
-            driver.findElement(By.xpath("//input[@placeholder='OTP']")).sendKeys(data[i][3]);
-            Thread.sleep(2000);
-            driver.findElement(By.xpath("//input[@placeholder='Password']")).sendKeys(data[i][4]);
-            Thread.sleep(2000);
-            driver.findElement(By.xpath("//input[@placeholder='Confirm Password']")).sendKeys(data[i][4]);
-            Thread.sleep(2000);
-
-            // Click on Submit
-            driver.findElement(By.xpath("//button[text()='Submit']")).click();
-            Thread.sleep(3000);
-
-            // Validate Successful Submission
-            String successMessage = "";
-            try {
-                WebElement toastMessage = driver.findElement(By.xpath("//div[contains(@class, 'toast-message')]"));
-                successMessage = toastMessage.getText();
-            } catch (Exception e) {
-                successMessage = "No confirmation message displayed, enter valid OTP.";
-            }
-
-            // Print result for each set
-            System.out.println("Result for " + data[i][0] + ": " + successMessage);
+            // Add two customers if login is successful
+            String[][] customerData = {
+                    {"Seemans Tiwari Pvt Ltd", "Seemans Tiwari", "9004381990", "seemanstiwari1@gmail.com"},
+                    {"Testing Pvt Ltd", "Automation", "9000050000", "automation@gmail.com"}
+            };
+            addMultipleCustomers(driver, customerData);
+        } else {
+            System.out.println("Login failed!");
         }
 
-        // Close the browser
-        driver.quit();
+        // Keep browser open after execution
+        while (true) {
+            Thread.sleep(1000);
+        }
+    }
+
+    // Method to perform login
+    public static void performLogin(WebDriver driver, String username, String password) throws InterruptedException {
+        // Clear and enter email/username
+        WebElement emailField = driver.findElement(By.xpath("//input[@placeholder='Email Id / Mobile No']"));
+        emailField.clear();
+        emailField.sendKeys(username);
+        Thread.sleep(1000);
+
+        // Clear and enter password
+        WebElement passwordField = driver.findElement(By.xpath("//input[@placeholder='Password']"));
+        passwordField.clear();
+        passwordField.sendKeys(password);
+        Thread.sleep(1000);
+
+        // Click on Sign In button
+        driver.findElement(By.xpath("//button[text()='Sign In']")).click();
+        Thread.sleep(2000); // Wait for response
+    }
+
+    // Method to get response message after login
+    public static String getResponseMessage(WebDriver driver) {
+        try {
+            Thread.sleep(2000); // Wait for page to load
+            String currentUrl = driver.getCurrentUrl();
+            if (currentUrl.contains("/dashboard")) {
+                return "Dashboard";
+            } else {
+                WebElement toastMessage = driver.findElement(By.xpath("//div[contains(@class, 'toast-message')]"));
+                return toastMessage.getText();
+            }
+        } catch (Exception e) {
+            return "No message displayed";
+        }
+    }
+
+    // Method to add multiple customers after successful login
+    public static void addMultipleCustomers(WebDriver driver, String[][] customerData) throws InterruptedException {
+        Thread.sleep(2000);
+
+        // Click on "My Customers"
+        driver.findElement(By.xpath("//span[text()='My Customers']")).click();
+        Thread.sleep(2000);
+
+        // Loop through each customer to add
+        for (int i = 0; i < customerData.length; i++) {
+            addNewCustomer(driver, customerData[i][0], customerData[i][1], customerData[i][2], customerData[i][3]);
+            Thread.sleep(1000);
+
+            // Refresh the page after adding each customer
+            driver.navigate().refresh();
+            Thread.sleep(2000);
+        }
+    }
+
+    // Method to add a new customer
+    public static void addNewCustomer(WebDriver driver, String leadName, String personName, String mobileNo, String email) throws InterruptedException {
+        Thread.sleep(2000);
+
+        // Click on "New Customer"
+        driver.findElement(By.cssSelector("button[mattooltip='Create new customer']")).click();
+        Thread.sleep(2000);
+
+        // Fill in New Customer Details
+        driver.findElement(By.cssSelector("input[formcontrolname='LeadName']")).sendKeys(leadName);
+        Thread.sleep(1000);
+
+        driver.findElement(By.cssSelector("input[formcontrolname='PersonName']")).sendKeys(personName);
+        Thread.sleep(1000);
+
+        driver.findElement(By.cssSelector("input[formcontrolname='MobileNo']")).sendKeys(mobileNo);
+        Thread.sleep(1000);
+
+        driver.findElement(By.cssSelector("input[formcontrolname='Email']")).sendKeys(email);
+        Thread.sleep(1000);
+
+        // Click on Save Button
+        driver.findElement(By.cssSelector("button[mattooltip='Save changes']")).click();
+        Thread.sleep(2000);
+
+        System.out.println("Customer added successfully: " + leadName);
     }
 }
